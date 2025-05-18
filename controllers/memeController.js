@@ -1,13 +1,26 @@
 const Meme = require('../models/Meme');
 const cloudinary = require('../config/cloudinary');
+const axios = require("axios");
+
 
 // Generate text meme (existing functionality)
 exports.generateTextMeme = async (req, res) => {
   try {
+    
     const { theme } = req.body;
-    // Your existing text generation logic here
-    res.json({ success: true, memeText: "Generated meme text" });
+
+    const response = await axios.post(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + process.env.GEMINI_API_KEY,
+      {
+        contents: [{ parts: [{ text: `Write a single funny meme about: ${theme}` }] }],
+      }
+    );
+    console.log("heyy");
+    const memeText = response.data.candidates?.[0]?.content?.parts?.[0]?.text || "Couldn't generate meme.";
+    console.log(memeText);
+    res.json({ success: true, memeText: memeText });
   } catch (error) {
+    console.error("Gemini API error:", error.response?.data || error.message || error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
